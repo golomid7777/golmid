@@ -40,14 +40,17 @@ async def list_participants(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
     data = load_data()
-    if not data:
-        await update.message.reply_text("No participants registered yet.")
+    if not data        await update.message.reply_text("No participants registered yet.")
         return
     text = "List of participants:\n\n"
     for uid, info in data.items():
         status = "paid" if info["paid"] else "not paid"
         username = info["username"]
-        display_username = "@" + username if not username.startswith("user") else username        text += f"{info['name']} ({display_username}) - ID: {uid} - {status}\n"
+        if username.startswith("user"):
+            display_username = username        else:
+            display_username = "@" + username
+        line = f"{info['name']} ({display_username}) - ID: {uid} - {status}\n"
+        text += line
     await update.message.reply_text(text)
 
 async def confirm_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -64,7 +67,10 @@ async def confirm_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data[user_id]["paid"] = True
     save_data(data)
     username = data[user_id]["username"]
-    display_username = "@" + username if not username.startswith("user") else username
+    if username.startswith("user"):
+        display_username = username
+    else:
+        display_username = "@" + username
     await update.message.reply_text(f"Payment confirmed for {display_username} (ID: {user_id})")
 
 async def draw_winners(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -90,13 +96,16 @@ async def draw_winners(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for wid in winners:
         info = data[wid]
         username = info["username"]
-        display_username = "@" + username if not username.startswith("user") else username
+        if username.startswith("user"):            display_username = username
+        else:
+            display_username = "@" + username
         winner_names.append(f"{info['name']} ({display_username})")
     result = "\n".join(winner_names)
     await update.message.reply_text(f"Winners ({count}):\n\n{result}")
 
 def main():
-    app = Application.builder().token(TOKEN).build()    app.add_handler(CommandHandler("reg_user", reg_user))
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("reg_user", reg_user))
     app.add_handler(CommandHandler("list", list_participants))
     app.add_handler(CommandHandler("pay", confirm_payment))
     app.add_handler(CommandHandler("win", draw_winners))
