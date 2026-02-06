@@ -4,28 +4,23 @@ import os
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-# === НАСТРОЙКИ ===
 ADMIN_ID = 233804112
 DATA_FILE = "participants.json"
 
-# Получаем токен из переменной окружения
 TOKEN = os.getenv("TOKEN")
 if not TOKEN:
     raise ValueError("❌ Переменная окружения TOKEN не задана!")
 
-# Загрузка данных
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     return {}
 
-# Сохранение данных
 def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-# /reg_user — регистрация участника
 async def reg_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     data = load_data()
@@ -41,24 +36,20 @@ async def reg_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_data(data)
     await update.message.reply_text("✅ Вы успешно зарегистрированы!\nОжидайте подтверждения оплаты организатором.")
 
-# /list — список участников (только админ)
 async def list_participants(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
     data = load_data()
     if not data:
-        await update.message.reply_text("📭 Нет зарегистрированных участников.")        return
-
+        await update.message.reply_text("📭 Нет зарегистрированных участников.")
+        return
     text = "📋 Список участников:\n\n"
     for uid, info in data.items():
         status = "✅ оплачено" if info["paid"] else "❌ не оплачено"
         username = info["username"]
-        display_username = f"@{username}" if not username.startswith("user") else username
-        text += f"• {info['name']} ({display_username}) — ID: {uid} — {status}\n"
-    
+        display_username = f"@{username}" if not username.startswith("user") else username        text += f"• {info['name']} ({display_username}) — ID: {uid} — {status}\n"
     await update.message.reply_text(text)
 
-# /pay <user_id> — подтвердить оплату (только админ)
 async def confirm_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -76,7 +67,6 @@ async def confirm_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     display_username = f"@{username}" if not username.startswith("user") else username
     await update.message.reply_text(f"💰 Оплата от {display_username} (ID: {user_id}) подтверждена!")
 
-# /win [count] — розыгрыш победителей (только админ)
 async def draw_winners(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -96,7 +86,8 @@ async def draw_winners(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if count > len(paid_users):
         count = len(paid_users)
     winners = random.sample(paid_users, count)
-    winner_names = []    for wid in winners:
+    winner_names = []
+    for wid in winners:
         info = data[wid]
         username = info["username"]
         display_username = f"@{username}" if not username.startswith("user") else username
@@ -104,10 +95,8 @@ async def draw_winners(update: Update, context: ContextTypes.DEFAULT_TYPE):
     result = "\n".join(winner_names)
     await update.message.reply_text(f"🎉 Победитель(и) ({count}):\n\n{result}")
 
-    # Запуск бота
 def main():
-    app = Application.builder().token(TOKEN).build()
-    app.add_handler(CommandHandler("reg_user", reg_user))
+    app = Application.builder().token(TOKEN).build()    app.add_handler(CommandHandler("reg_user", reg_user))
     app.add_handler(CommandHandler("list", list_participants))
     app.add_handler(CommandHandler("pay", confirm_payment))
     app.add_handler(CommandHandler("win", draw_winners))
