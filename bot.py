@@ -47,7 +47,8 @@ async def list_participants(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     data = load_data()
     if not data:
-        await update.message.reply_text("📭 Нет зарегистрированных участников.")        return
+        await update.message.reply_text("📭 Нет зарегистрированных участников.")        
+        return
     text = "📋 Список участников:\n\n"
     for uid, info in data.items():
         status = "✅ оплачено" if info["paid"] else "❌ не оплачено"
